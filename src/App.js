@@ -1,6 +1,6 @@
 // import logo from './assets/images/logo.svg';
 import './assets/css/App.css';
-import { ToDoList } from './components/TodoList';
+import { ToDoList } from './components/ToDoList';
 import Badge from 'react-bootstrap/Badge'
 
 function App() {
