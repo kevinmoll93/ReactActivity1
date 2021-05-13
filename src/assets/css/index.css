@@ -11,3 +11,125 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/*-------------------------------------Css nav-------------------------------------- */
+
+:root {
+  /* Colors: */
+  --primary-color: #1f68fa;
+  --light-text-color: #f5f6f7;
+  --light-placeholder-color: #ced4de;
+  --dark-text-color: #2d3747;
+
+  /* Shadows: */
+  --shadow-dilute: 5px 5px 25px 0 rgba(46, 61, 73, 0.2);
+  --shadow-conc: 2px 4px 8px 0 rgba(46, 61, 73, 0.2);
+
+  /* Misc: */
+  --transition: all 0.2s ease-in-out;
+}
+
+body {
+  font-family: sans-serif;
+  background: #f6f8fa;
+  color: var(--dark-text-color);
+}
+
+#root {
+  overflow: hidden;
+}
+
+.App {
+  padding: 1rem;
+}
+
+.primary-button {
+  background: var(--primary-color);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  border: 0;
+  padding: 1rem;
+  margin-right: 1rem;
+  border-radius: 4px;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  box-shadow: var(--shadow-dilute);
+}
+
+.primary-button:active {
+  box-shadow: var(--shadow-conc);
+}
+
+.Menu {
+  padding: 1rem;
+  position: relative;
+  background: #282828;
+  color: var(--light-text-color);
+  height: 100%;
+}
+
+.Menu button {
+  background: none;
+  border: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  cursor: pointer;
+  fill: var(--light-placeholder-color);
+  transition: var(--transition);
+}
+
+.Menu button:hover {
+  fill: var(--light-text-color);
+}
+
+.Menu nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.Menu nav a {
+  color: var(--light-placeholder-color);
+  fill: var(--light-placeholder-color);
+  margin: 0 -1rem;
+  padding: 0.6rem 1rem;
+  text-decoration: none;
+  position: relative;
+  display: flex;
+  align-items: center;
+  transition: var(--transition);
+}
+
+.Menu nav a:hover {
+  color: var(--light-text-color);
+  fill: var(--light-text-color);
+}
+
+.Menu nav a.active {
+  /* background: linear-gradient(90deg, #dae0ee, rgba(32, 39, 55, 0.1)); */
+  color: var(--light-text-color);
+  fill: var(--light-text-color);
+}
+
+.Menu nav a.active::before {
+  content: "";
+  display: block;
+  position: absolute;
+  height: 100%;
+  width: 5px;
+  background: var(--primary-color);
+  left: 0;
+  top: 0;
+}
+
+.Menu nav a svg {
+  margin-right: 1rem;
+}

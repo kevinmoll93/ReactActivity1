@@ -1,33 +1,32 @@
-// import logo from './assets/images/logo.svg';
-import './assets/css/App.css';
-import {BrowserRouter as Router, Route, Switch} from 'react-router-dom';
-import { ToDoList } from './views/TodoList';
-// import Badge from 'react-bootstrap/Badge'
-import { Empresas } from './views/Empresas';
-import { Ciudades } from './views/Ciudades';
-import { Paises } from './views/Paises';
-import { NavBar } from './views/NavBar';
+import './assets/css/App.css' ;
+import { useContext} from 'react';
+import {Route } from "react-router-dom";
+import { MenuContext } from "react-flexible-sliding-menu";
+import PaisesForm from './components/PaisesForm';
+import CiudadesForm from './components/CiudadesForm';
+import EmpresasForm from './components/EmpresasForm';
+import JobForm from './components/JobForm';
 import { NotFoundView } from './views/NotFoundView';
 
+
 function App() {
+  const { toggleMenu } = useContext(MenuContext);
   return (
-    
-    <Router>
-      <NavBar></NavBar>
-      <Switch>
-        <Route path="/" exact component={ToDoList} ></Route>
-        <Route path="/Empresas" exact component={Empresas} ></Route>
-        <Route path="/Ciudades" exact component={Ciudades} ></Route>
-        <Route path="/Paises" exact component={Paises} ></Route>
-        <Route component={NotFoundView}></Route>
-      </Switch>
-{/*       <div className="container">
-      <div className="mt-5">
-        <h1><Badge variant="info">Puesto de Trabajo</Badge></h1>
-        <ToDoList />
-      </div>
-    </div> */}
-    </Router>
+    <div className="App">
+      <h1>App: Puestos de trabajo</h1>
+      <p>Usted puede agregar Paises,Ciudades y Empresas.</p>
+
+      <Route exact path="/" component={() => <h2>Inicio</h2>} />
+      <Route path="/paises" exact component={PaisesForm} />
+      <Route path="/ciudades" component={CiudadesForm} />
+      <Route path="/empresas" component={EmpresasForm} />
+      <Route path="/puesto" component={JobForm} />
+      <Route component={NotFoundView} />
+
+      <button onClick={toggleMenu} className="primary-button">
+        Abrir Menu
+      </button>
+    </div>
   );
 }
 
