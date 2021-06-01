@@ -1,57 +1,91 @@
-import React, { Fragment } from 'react';
-import Alert from '../utils/Alert';
+import React, { useState, useEffect } from 'react';
+import { alertaError, alertaBorrar } from '../utils/Alert2';
+import { getCountries, getPlaces, getOrganizations, postPlaces, deletePlaces, putPlaces } from '../utils/api';
+import CiudadesForm from '../components/CiudadesForm';
+import CiudadesList from '../components/CiudadesList';
+import Spinner from '../components/Spinner';
 
-const ViewCiudades = ({cities,countries,deleteCity}) => {
-    
+export const ViewCiudades = () => {
+  const [places, chargePlaces] = useState([]);
+  const [countries, chargeCountries] = useState([]);
+  const [organization, chargeOrganization] = useState([]);
+  const [spinner, chargeSpinner] = useState(false);
+  const [uPlace, chargeUplace] = useState([]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(async () => {
+    chargeSpinner(true);
+    await Promise.all([getPlaces(), getCountries(), getOrganizations()]).then(
+      resp => {
+        chargePlaces(resp[0]);
+        chargeCountries(resp[1]);
+        chargeOrganization(resp[2]);
+      },
+    );
+    chargeSpinner(false);
+  }, []);
+  let component;
+  if (spinner) {
+    component = <Spinner />;
+  } else {
+    component = (
+      <CiudadesList
+        list={places}
+        deleteP={deleteP}
+        countries={countries}
+        objPlace={objPlace}
+      />
+    );
+  }
+  function objPlace(id) {
+    const c = places.filter(c => c.id === id);
+    chargeUplace(c);
+  }
+  async function updatePlaces(place) {
+    chargeSpinner(true);
+    await putPlaces(place);
+    const placeApi = await getPlaces();
+    chargePlaces(placeApi);
+    chargeSpinner(false);
+  }
+  const addPlaces = async places => {
+    chargeSpinner(true);
+    await postPlaces(places);
+    const placesApi = await getPlaces(places);
+    chargePlaces(placesApi);
+    chargeSpinner(false);
+  };
 
-    const deleteCityParent=(e) => {
-        const id = Number(e.target.dataset.id);
-        deleteCity(id);
-    } 
-    
-    return (
-            <Fragment>
-                {(cities.length === 0 ) 
-                        ? <Alert tipo="danger" mensaje="No se encuentran datos registrados" time={0}/>
-                        : 
-                        <Fragment>
-                            <table  className="table mb-5">
-                                <thead className="thead-dark">
-                                    <tr>
-                                        <th scope="col" className="text-center py-2">Pais</th>
-                                        <th scope="col" className="text-center py-2">Ciudad</th>
-                                        <th scope="col" className="text-center py-2"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    { cities.map((city) => {
-                                        let resultPais = (countries.filter(country => Number(city.country) === country.id)[0]);
-                                        return (
-                                            <tr key={city.id}>
-                                                <td className="text-center py-2">{resultPais.name}</td>
-                                                <td className="text-center py-2">{city.name}</td>
-                                                <td className="text-center py-2">
-                                                    <button 
-                                                            data-id={city.id} 
-                                                            className="btn btn-danger" 
-                                                            onClick={deleteCityParent}>
-                                                                Borrar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                    
-                      </Fragment>
-                    }
-                
-            </Fragment>
-        )
-    
-}
-
-export default ViewCiudades;
+  function deleteP(id) {
+    let countriesOrg = organization.some(e => e.placeId === id);
+    if (countriesOrg) {
+      alertaError(
+        'The city you want to delete is related to a country. Check and try again',
+      );
+      return;
+    }
+    chargeSpinner(true);
+    alertaBorrar().then(async resp => {
+      if (resp) {
+        const result = await deletePlaces(id);
+        if (result.status === 200) {
+          const placesApi = await getPlaces();
+          chargePlaces(placesApi);
+        }
+      }
+      chargeSpinner(false);
+    });
+  }
+  return (
+    <>
+      <CiudadesForm
+        addPlaces={addPlaces}
+        updatePlaces={updatePlaces}
+        countries={countries}
+        uPlace={uPlace}
+      />
+      {component}
+    </>
+  );
+};
 
 

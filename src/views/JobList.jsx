@@ -1,76 +1,97 @@
-import React, { Fragment } from 'react';
-import Alert from '../utils/Alert';
-import {FilterSameData} from '../utils/Storage';
+import React, { useState, useEffect } from 'react';
+import { alertaBorrar } from '../utils/Alert2';
+import { getCountries, getPlaces, getOrganizations, getJobs, deleteJobs, postJobs, putJobs } from '../utils/api';
+import { JobForm } from '../components/JobForm';
+import { JobsList } from '../components/JobsList';
+import Spinner from '../components/Spinner';
 
-const JobList = ({jobs,deleteJob}) => {
-    
+export const JobList = () => {
+  const [jobs, chargeJobs] = useState([]);
+  const [countries, chargeCountries] = useState([]);
+  const [places, chargePlaces] = useState([]);
+  const [organization, chargeOrganization] = useState([]);
+  const [spinner, chargeSpinner] = useState(false);
+  const [uJob, chargeUJob] = useState([]);
 
-     const deleteJobParent=(e) => {
-        const id = Number(e.target.dataset.id);
-        deleteJob(id);
-    } 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(async () => {
+    chargeSpinner(true);
+    await Promise.all([
+      getJobs(),
+      getCountries(),
+      getPlaces(),
+      getOrganizations(),
+    ]).then(resp => {
+      chargeJobs(resp[0]);
+      chargeCountries(resp[1]);
+      chargePlaces(resp[2]);
+      chargeOrganization(resp[3]);
+    });
+    chargeSpinner(false);
+  }, []);
 
-    const filterBusiness = (IdBusiness) => {
-        let name='---';
-        let result = FilterSameData('business',IdBusiness)
-        if(Object.keys(result[0]).length >0 ) name = result[0].name;
-        let resultCity = FilterSameData('cities',result[0].city)
-        let resultCountry = FilterSameData('countries',result[0].country)
-        return (
-                <Fragment>
-                <td className="text-center py-2">{name}</td>
-                <td className="text-center py-2">{resultCity[0].name || '--'}</td>
-                <td className="text-center py-2">{resultCountry[0].name || '--'}</td>
-                </Fragment>
-        )
-    }
+  let component;
+  if (spinner) {
+    component = <Spinner />;
+  } else {
+    component = (
+      <JobsList
+        list={jobs}
+        deleteJ={deleteJ}
+        countries={countries}
+        places={places}
+        organization={organization}
+        objJob={objJob}
+      />
+    );
+  }
 
+  function objJob(id) {
+    const c = jobs.filter(c => c.id === id);
+    chargeUJob(c);
+  }
 
-    
-    return (
-        <Fragment>
-        {(jobs.length === 0 ) 
-                ? <Alert tipo="danger" alert="No se encuentran datos registrados" time={0}/>
-                : 
-                <Fragment>
-                    <table  className="table mb-5">
-                        <thead className="thead-dark">
-                            <tr>
-                            <th scope="col" className="text-center py-2">Puesto</th>
-                                <th scope="col" className="text-center py-2">Empresa</th>
-                                <th scope="col" className="text-center py-2">Ciudad</th>
-                                <th scope="col" className="text-center py-2">Pais</th>
-                                <th scope="col" className="text-center py-2">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            { jobs.map((job) => {
-                                return (
-                                    <tr key={job.id}>
-                                        <td className="text-center py-2">{job.job}</td>
-                                         {filterBusiness(job.business)}
-                                        
-                                        
-                                        <td className="text-center py-2">
-                                            <button 
-                                                    data-id={job.id} 
-                                                    className="btn btn-danger" 
-                                                    onClick={deleteJobParent}>
-                                                        Borrar
-                                            </button>
-                                        </td>
-                                    </tr>
-                                )
-                            })}
-                        </tbody>
-                    </table>
-                        
-              </Fragment>
-            }
+  async function updateJob(job) {
+    chargeSpinner(true);
+    await putJobs(job);
+    const orgApi = await getJobs();
+    chargeJobs(orgApi);
+    chargeSpinner(false);
+  }
 
-        </Fragment>
-        )
-    
-}
+  const addJobs = async jobs => {
+    chargeSpinner(true);
+    await postJobs(jobs);
+    const jobsApi = await getJobs();
+    chargeJobs(jobsApi);
+    chargeSpinner(false);
+  };
 
-export default JobList;
+  function deleteJ(id) {
+    alertaBorrar().then(async resp => {
+      if (resp) {
+        chargeSpinner(true);
+
+        const result = await deleteJobs(id);
+        if (result.status === 200) {
+
+          const jobApi = await getJobs();
+          chargeJobs(jobApi);
+        }
+      }
+      chargeSpinner(false);
+    });
+  }
+
+  return (
+    <>
+      <JobForm
+        addJobs={addJobs}
+        organization={organization}
+        uJob={uJob}
+        updateJob={updateJob}
+      />
+      {component}
+    </>
+  );
+};

@@ -1,137 +1,163 @@
-import React, {Fragment,useEffect,useState} from 'react';
-import Alert from '../utils/Alert';
-import Loader from 'react-loader';
-import {GetDataLocalStorage,InsertDataLocalStorage,FilterData} from '../utils/Storage';
-import ViewCiudades from '../views/ViewCiudades';
+import React, { useState, useEffect } from 'react';
+import { validateInputForm } from '../utils/validate';
 
-const Cities = () => {
-    
-    const getInitialObj = () => (
-        {
-            id:Date.now(),
-            country:'',
-            name:''
-        }
-    )
+const CiudadesForm = ({ addPlaces, countries, uPlace, updatePlaces }) => {
+  const [places, chargePlaces] = useState('');
+  const [countrieState, chargeCountries] = useState(0);
+  const [visible, chargeVisible] = useState(true);
+  const [update, chargeUpdate] = useState(false);
+  const [placeId, chargePlaceId] = useState(0);
+  const [nameBtn, chargeNameBtn] = useState('Agregar');
 
-    const[objCity,saveCity] = useState(getInitialObj);
-    const[error,saveError] = useState(false);
-    const[loading,saveLoading] = useState(false);
-    const[cities,saveCities]= useState(GetDataLocalStorage('cities'));
-    
-    let countries=GetDataLocalStorage('countries');
-    
-    useEffect(()=> {
-        const writeCities = () =>{
-            setTimeout(() => {
-                InsertDataLocalStorage('cities',cities)
-                saveLoading(false)
-                saveCity(getInitialObj)
-            }, 2000);
-        }
-        writeCities();
+  const addValue = e => {
+    let htmlParent;
+    if (e.target.id !== 'countries') {
+      htmlParent = e.target.parentElement.querySelector('input');
+      chargePlaces(htmlParent.value);
+    } else {
+      htmlParent = e.target;
+      chargeCountries(htmlParent.value);
+    }
+    btnVisible(e);
+  };
 
-    },[cities])
+  useEffect(() => {
+    if (uPlace.length > 0) {
+      updateP(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uPlace]);
 
-    
-    const updateState=(e) => {
-        saveError(false);
-        saveCity({...objCity,[e.target.name] :e.target.value})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function updateP(update) {
+    chargeUpdate(update);
+    if (update) {
+      chargeNameBtn('Actualizar');
+      chargePlaces(uPlace[0].name);
+      chargeCountries(uPlace[0].countrieId);
+      chargePlaceId(uPlace[0].id);
+      chargeVisible(false);
+    } else {
+      chargeNameBtn('Agregar');
+      chargePlaces('');
+      chargeCountries(0);
+      chargePlaceId(0);
+      chargeVisible(true);
+    }
+  }
+
+  function btnVisible(e) {
+    if (validateInputForm(e)) {
+      chargeVisible(true);
+    } else {
+      chargeVisible(false);
+    }
+  }
+
+  const addItem = e => {
+    if (e) {
+      e.preventDefault();
     }
 
-  
-    const{country,name}= objCity;
-    
-    const addCity = (e) => {
-       e.preventDefault();
-    
-       if(country.trim() === '' || name.trim() === ''){
-           saveError(true);
-           return;
-       }
-       saveLoading(true);
-       saveCities([...cities,objCity]);
+    let placesObj;
+    if (placeId > 0) {
+      placesObj = {
+        name: places,
+        countrieId: Number(countrieState),
+        id: Number(placeId),
+      };
+      updatePlaces(placesObj);
+    } else {
+      placesObj = {
+        name: places,
+        countrieId: Number(countrieState),
+      };
+      addPlaces(placesObj);
     }
 
-  
-    const deleteCity = (IdCity) =>{
-        saveLoading(true);
-        const result = FilterData('cities',IdCity);
-       saveCities(result);
-    }
+    chargePlaces('');
+    updateP(false);
+    e.target.reset();
+    btnVisible(e);
+  };
+  return (
+    <>
+          <h3 className="text-center text-underline mt-5 mb-5">Agregar Ciudades</h3>
+          <div className="container-fluid">
+            <div className="row ml-0 ml-lg-5">
+              <div className="col-12 col-md-5  col-lg-6">
+                <form onSubmit={addItem}>
+                      <div className="col">
+                  <label htmlFor="nombre" className="mt-4" >Nombre de la ciudad</label>
+                    <input
+                    type="text"
+                    id="places"
+                    className="form-control"
+                    placeholder="Ingresar Nombre de Ciudad"
+                    onChange={e => addValue(e)}
+                    onKeyDown={e => addValue(e)}
+                    value={places}
+                    required
+                  />
+                      </div>
+                      <div className="row">
+                      <div className="col-12">
+                      <label htmlFor="pais" >Pais</label>
+                          <select
+                            className="form-select"
+                            id="countries"
+                            onChange={e => addValue(e)}
+                            onKeyDown={e => addValue(e)}
+                            required>
+                            <option value="0">Seleccionar Pais</option>
+                            {countries.map(countrie => {
+                              const { name, id } = countrie;
+                              if (!update) {
+                                return (
+                                  <option key={id} value={id}>
+                                    {name}
+                                  </option>
+                                );
+                              } else if (uPlace[0].countrieId === id) {
+                                return (
+                                  <option key={id} value={id} selected>
+                                    {name}
+                                  </option>
+                                );
+                              } else {
+                                return (
+                                  <option key={id} value={id}>
+                                    {name}
+                                  </option>
+                                );
+                              }
+                            })}
+                          </select>
+                      </div>
+                      </div>
+                          <input type="text" value={placeId} readOnly hidden />
+                        
+                          <button disabled={visible} className="btn btn-success btn-lg mt-4" type="submit">
+                            {nameBtn}
+                          </button>
+                          
+                          {update ? (
+                            <button
+                              className="btn btn-danger btn-lg mt-4"
+                              type="button"
+                              onClick={() => updateP(false)}>
+                              Cancelar
+                            </button>
+                            
+                          ) : (
+                            ''
+                          )}
+                      </form>
+                </div>
+            </div>
+          </div>
+    </>
+  );
+};
+export default CiudadesForm;
 
-
-        return (
-            <Fragment>
-               <h3 className="text-center text-underline mt-5 mb-5">Agregar Ciudades</h3>
-               <div className="container-fluid">
-                   <div className="row ml-0 ml-lg-5">
-                       <div className="col-12 col-md-5  col-lg-6">
-                           <form
-                               onSubmit={addCity}
-                           >
-                               <div className="row">
-                                   <div className="col-12">
-                                       <label htmlFor="pais" >Pais</label>
-                                       <select 
-                                            className="custom-select" 
-                                            id="country"
-                                            name="country"
-                                            value={country}
-                                            onChange={updateState}
-                                            >
-                                          <option value="">Seleccionar Pais</option>
-                                          {countries.map((country,index) => (
-                                            <option key={index} value={Number(country.id)} >{country.name}</option>
-                                          ))}
-                                        </select>
-                                   </div>
-                                   <div className="col">
-                                       <label htmlFor="nombre" className="mt-4" >Nombre de la ciudad</label>
-                                       <input 
-                                           type="text" 
-                                           id="name" 
-                                           name="name"
-                                           className="form-control" 
-                                           placeholder="Ingrese el nombre de la ciudad"
-                                           onChange={updateState}
-                                           value={name}
-                                       />
-                                   </div>
-                               </div>
-                               <button 
-                                   type="submit" 
-                                   className="btn btn-success btn-lg mt-4"
-                               >
-                                   Agregar
-                               </button>
-                               {(error) 
-                                    ? <Alert tipo="danger" mensaje="Rellene todos los campos" time={3}/>: null
-                               }
-                           </form>
-                       </div>
-                       <div className="col-12 mt-5 col-md-7 mt-md-0 col-lg-6 ">
-                           {(loading) 
-                               ?  <Loader/>
-                               :  <div className="container">
-                                       <div className="row">
-                                           <div className="col-12">
-                                               { <ViewCiudades
-                                                   cities={cities}
-                                                   countries={countries}
-                                                   deleteCity={deleteCity}
-                                               /> }
-                                           </div>
-                                       </div>
-                                   </div>
-                           }
-                       </div>
-                   </div>
-               </div>
-           </Fragment>
-       )
-    
-
-}
-
-export default Cities;

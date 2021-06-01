@@ -1,133 +1,179 @@
-import React, {Fragment,useEffect,useState} from 'react';
-import Alert from '../utils/Alert';
-import Loader from 'react-loader';
-import {GetDataLocalStorage,InsertDataLocalStorage,FilterData} from '../utils/Storage';
-import JobList from '../views/JobList';
+import React, { useState, useEffect } from 'react';
+import { validateInputForm } from '../utils/validate';
 
-const JobForm = () =>{
+export const JobForm = ({ addJobs, organization, uJob, updateJob }) => {
+  //State
+  const [org, chargeOrg] = useState(0);
+  const [position, chargePosition] = useState('');
+  const [description, chargeDesc] = useState('');
+  const [visible, chargeVisible] = useState(true);
+  const [update, chargeUpdate] = useState(false);
+  const [jobId, chargeJobId] = useState(0);
+  const [nameBtn, chargeNameBtn] = useState('Actualizar');
 
-    const  getInitialObj = () => ({
-        id:Date.now(),
-        job:'',
-        business:'',
-    })
-    
+  useEffect(() => {
+    if (uJob.length > 0) {
+      updateJ(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uJob]);
 
-    const [objJob, saveJob] = useState(getInitialObj);
-    const [jobs, saveJobs] = useState(GetDataLocalStorage('jobs'));
-    const [error,saveError] = useState(false);
-    const [loading,saveLoading] = useState(false);
-    
-    let businessArr = GetDataLocalStorage('business');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function updateJ(update) {
+    chargeUpdate(update);
+    if (update) {
+      chargeNameBtn('Actualizar');
+      chargeOrg(uJob[0].organizationId);
+      chargeDesc(uJob[0].description);
+      chargePosition(uJob[0].position);
+      chargeJobId(uJob[0].id);
+      chargeVisible(false);
+    } else {
+      chargeNameBtn('Agregar');
+      chargeOrg(0);
+      chargeDesc('');
+      chargePosition('');
+      chargeJobId(0);
+      chargeVisible(true);
+    }
+  }
 
-    useEffect(()=>{
-        
-        const writeJob = () =>{
-            setTimeout(() => {
-                InsertDataLocalStorage('jobs',jobs)
-                saveLoading(false)
-                saveJob(getInitialObj)
-            }, 2000);
-        }
-        writeJob();
-    },[jobs])
-
-    const updateState = (e) => {
-        saveError(false);
-        saveJob({...objJob,[e.target.name] :e.target.value})
+  const addItem = e => {
+    if (e) {
+      e.preventDefault();
     }
 
-    const {job,business} = objJob;
-    const addJob = (e) => {
-        e.preventDefault();
-        
-        if(job.trim() === '' || business.trim() === ''){
-            saveError(true);
-            return;
-        }
-        saveLoading(true);
-        saveJobs([...jobs,objJob]);
+    let jobsObj;
+    if (jobId > 0) {
+      jobsObj = {
+        position,
+        description,
+        organizationId: Number(org),
+        id: Number(jobId),
+      };
+      updateJob(jobsObj);
+    } else {
+      jobsObj = {
+        position,
+        description,
+        organizationId: Number(org),
+      };
+      addJobs(jobsObj);
     }
 
-     const deleteJob = (IdJob) =>{
-       saveLoading(true);
-       const result = FilterData('jobs',IdJob);
-       saveJobs(result);
-    } 
+    chargeDesc('');
+    chargePosition('');
+    chargeOrg(0);
+    updateJ(false);
+    e.target.reset();
+    btnVisible(e);
+  };
 
-    return(
+  const addValue = e => {
+    if (e.target.id === 'position') {
+      chargePosition(e.target.parentElement.querySelector('#position').value);
+    } else if (e.target.id === 'description') {
+      chargeDesc(e.target.parentElement.querySelector('#description').value);
+    } else {
+      chargeOrg(e.target.value);
+    }
 
-        <Fragment>
-        <h3 className="text-center text-underline mt-5 mb-5">Agregar Puestos de Trabajo</h3>
+    btnVisible(e);
+  };
+
+  const btnVisible = e => {
+    if (validateInputForm(e)) {
+      chargeVisible(true);
+    } else {
+      chargeVisible(false);
+    }
+  };
+
+  return (
+    <>
+    <h3 className="text-center text-underline mt-5 mb-5">Agregar Puestos de Trabajo</h3>
         <div className="container-fluid">
             <div className="row ml-0 ml-lg-5">
                 <div className="col-12 col-md-4  col-lg-6">
-                    <form
-                       onSubmit={addJob}
-                    >    
-                         <div className="row">
+                  <form onSubmit={addItem}>
+                  <div className="row">
                         
                         <div className="col-12">
                                 <label htmlFor="job" className="mt-4" >Puesto de trabajo</label>
-                                <input 
-                                    type="text" 
-                                    id="job" 
-                                    name="job"
-                                    className="form-control" 
-                                    placeholder="Ingrese el nombre del puesto de trabajo"
-                                    onChange={updateState}
-                                    value={job}
-                                    
-                                />
-                            </div>
-                            <div className="col-12">
-
+                                    <input
+                                      type="text"
+                                      id="position"
+                                      className="form-control"
+                                      placeholder="Escribir Puesto de trabajo"
+                                      onChange={e => addValue(e)}
+                                      onKeyDown={e => addValue(e)}
+                                      value={position}
+                                      required
+                                    />
+                                    <input
+                                      type="text"
+                                      id="description"
+                                      className="form-control"
+                                      placeholder="Descripcion del puesto de trabajo"
+                                      onChange={e => addValue(e)}
+                                      onKeyDown={e => addValue(e)}
+                                      value={description}
+                                      required
+                                    />
+                                     </div>
+                              <div className="col-12">
                                 <label htmlFor="business" >Empresa</label>
-                                <select 
-                                     className="custom-select" 
-                                     id="business"
-                                     name="business"
-                                     onChange={updateState}
-                                     value={business}
-                                     >
-                                    <option value="">Seleccionar Empresa</option>
-                                     {businessArr.map((business,index) => (
-                                     <option key={index} value={Number(business.id)} >{business.name}</option>
-                                   ))} 
-                                 </select>
+                                  <select
+                                    className="form-select"
+                                    id="org"
+                                    onChange={e => addValue(e)}
+                                    onKeyDown={e => addValue(e)}
+                                    required>
+                                    <option value="0">Seleccionar Empresa</option>
+                                    {organization.map(e => {
+                                      const { name, id } = e;
+                                      if (!update) {
+                                        return (
+                                          <option key={id} value={id}>
+                                            {name}
+                                          </option>
+                                        );
+                                      } else if (Number(uJob[0].organizationId) === Number(id)) {
+                                        return (
+                                          <option key={id} value={id} selected>
+                                            {name}
+                                          </option>
+                                        );
+                                      } else {
+                                        return (
+                                          <option key={id} value={id}>
+                                            {name}
+                                          </option>
+                                        );
+                                      }
+                                    })}
+                                  </select>
+                                  </div>
                             </div>
-                            
-                        </div>
-                        <button 
-                            type="submit" 
-                            className="btn btn-success btn-lg mt-4"
-                        >
-                            Agregar
-                        </button>
-                        {(error) 
-                             ? <Alert tipo="danger" mensaje="Rellene todos los campos" time={3}/>: null
-                        }
-                    </form>
-                </div>
-                <div className="col-12 mt-5 col-md-8 mt-md-0 col-lg-6 ">
-                    {(loading) 
-                        ?  <Loader/>
-                        :  <div className="container">
-                                <div className="row">
-                                    <div className="col-12">
-                                        <JobList
-                                        deleteJob={deleteJob}
-                                        jobs={jobs}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                    }
-                </div>
-            </div>
-        </div>
-    </Fragment>
-    )
-}
+          <input type="text" value={jobId} readOnly hidden />
+          <button disabled={visible} className="btn btn-success btn-lg mt-4" type="submit">
+            {nameBtn}
+          </button>
 
-export default JobForm;
+          {update ? (
+            <button
+              className="btn btn-danger btn-lg mt-4"
+              type="button"
+              onClick={() => updateJ(false)}>
+              Cancelar
+            </button>
+          ) : (
+            ''
+          )}
+      </form>
+            </div>
+          </div>
+      </div>
+    </>
+  );
+};

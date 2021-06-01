@@ -1,53 +1,87 @@
-import React, { Fragment } from 'react';
-import Alert from '../utils/Alert';
+import React, { useState, useEffect } from 'react';
+import { alertaError, alertaBorrar } from '../utils/Alert2';
+import { getCountries, postCountries, deleteCountries, getPlaces, putCountries } from '../utils/api';
+import PaisesForm from '../components/PaisesForm';
+import PaisesList from '../components/PaisesList';
+import Spinner from '../components/Spinner';
 
+export const ViewPaises = () => {
+  const [countries, chargeCountries] = useState([]);
+  const [places, chargePlaces] = useState([]);
+  const [spinner, chargeSpinner] = useState(false);
+  const [uCountrie, chargeUcountrie] = useState([]);
 
-const ViewPaises = ({countries,deleteCountry}) =>{
-    
+  //components variables
+  let component;
+  if (spinner) {
+    component = <Spinner />;
+  } else {
+    component = (
+      <PaisesList
+        listado={countries}
+        deleteCountrie={deleteCountrie}
+        updCountrie={updCountrie}
+      />
+    );
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(async () => {
+    chargeSpinner(true);
+    await Promise.all([getCountries(), getPlaces()]).then(resp => {
+      chargeCountries(resp[0]);
+      chargePlaces(resp[1]);
+    });
+    chargeSpinner(false);
+  }, []);
 
-    const deleteCountryParent = (e) => {
-        const id = Number(e.target.dataset.id);
-        deleteCountry(id);
+  function updCountrie(id) {
+    const c = countries.filter(c => c.id === id);
+    chargeUcountrie(c);
+  }
+  const addCountrie = async countries => {
+    chargeSpinner(true);
+    await postCountries(countries);
+    const countriesApi = await getCountries();
+    chargeCountries(countriesApi);
+    chargeSpinner(false);
+  };
+  async function updateCountries(countrie) {
+    chargeSpinner(true);
+    await putCountries(countrie);
+    const countriesApi = await getCountries();
+    chargeCountries(countriesApi);
+    chargeSpinner(false);
+  }
+  async function deleteCountrie(id) {
+    const countriePlaces = places.some(c => c.countrieId === id);
+    if (countriePlaces) {
+      alertaError(
+        'The country you want to delete is associated with a city. Check and try again',
+      );
+      return;
     }
-    
-    return (
-            <React.Fragment>
-                {(countries.length === 0 ) 
-                    ? <Alert tipo="danger" mensaje="No se encuentran datos registrados" time={0}/>
-                    : <Fragment>
-                            <table  className="table mb-5">
-                                <thead className="thead-dark">
-                               <tr>
-                                    <th scope="col" className="text-center py-2">Id</th>
-                                    <th scope="col" className="text-center py-2">Nombre</th>
-                                    <th scope="col" className="text-center py-2"></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                { countries.map((country) => {
-                                    return (
-                                        <tr key={country.id}>
-                                            <td className="text-center py-2">{country.code}</td>
-                                            <td className="text-center py-2">{country.name}</td>
-                                            <td className="text-center py-2">
-                                                <button 
-                                                        data-id={country.id} 
-                                                        className="btn btn-danger" 
-                                                        onClick={deleteCountryParent}>
-                                                            Borrar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                        )
-                                    })}
-                                </tbody>
-                            </table>
-                        </Fragment>
-                }
-            </React.Fragment>
-    )
-    
-}
+    chargeSpinner(true);
+    alertaBorrar().then(async resp => {
+      if (resp) {
+        const result = await deleteCountries(id);
+        if (result.status === 200) {
+          const countriesApi = await getCountries();
+          chargeCountries(countriesApi);
+        }
+      }
+      chargeSpinner(false);
+    });
+  }
 
-export default ViewPaises;
+  return (
+    <>
+      <PaisesForm
+        addCountrie={addCountrie}
+        uCountrie={uCountrie}
+        updateCountries={updateCountries}
+      />
+      {component}
+    </>
+  );
+};
 

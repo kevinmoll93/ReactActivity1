@@ -1,127 +1,117 @@
-import React, { Fragment,useEffect,useState } from 'react';
-import Alert from '../utils/Alert';
-import Loader from 'react-loader';
-import {GetDataLocalStorage,InsertDataLocalStorage,FilterData} from '../utils/Storage';
-import ViewPaises from '../views/ViewPaises';
-import '../assets/css/App.css'
+import React, { useState, useEffect } from 'react';
+import { validateInputForm } from '../utils/validate';
 
-const Country = () => {
+const PaisesForm = ({ addCountrie, uCountrie, updateCountries }) => {
 
-    const  getInitialObj = () => ({
-        id:Date.now(),
-        code:'',
-        name:''
-    })
-    
-    const[objCountry,saveCountry] = useState(getInitialObj);
-    const[countries,saveCountries]= useState(GetDataLocalStorage('countries'));
-    const[error,saveError] = useState(false);
-    const[loading,saveLoading] = useState(false);
-    
-    useEffect(()=>{
-        
-        const writeCountries = () =>{
-            setTimeout(() => {
-                InsertDataLocalStorage('countries',countries)
-                saveLoading(false)
-                saveCountry(getInitialObj)
-            }, 2000);
-        }
-        writeCountries();
-    },[countries])
-  
-    const updateState = (e) => {
-        saveError(false);
-        saveCountry({...objCountry,[e.target.name] :e.target.value})
+  const [countrie, chargeCountrie] = useState('');
+  const [nameBtn, chargeNameBtn] = useState('Agregar');
+  const [visible, chargeVisible] = useState(true);
+  const [update, chargeUpdate] = useState(false);
+  const [countrieId, chargeCountrieId] = useState(0);
+
+  useEffect(() => {
+    if (uCountrie.length > 0) {
+      updateC(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uCountrie]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  function updateC(update) {
+    chargeUpdate(update);
+    if (update) {
+      chargeNameBtn('Actualizar');
+      chargeCountrie(uCountrie[0].name);
+      chargeCountrieId(uCountrie[0].id);
+      chargeVisible(false);
+    } else {
+      chargeNameBtn('Agregar');
+      chargeCountrie('');
+      chargeCountrieId(0);
+      chargeVisible(true);
+    }
+  }
+
+  const addValue = e => {
+    const htmlParent = e.target.parentElement.querySelector('input');
+    chargeCountrie(htmlParent.value);
+    btnVisible(e);
+  };
+
+  const btnVisible = e => {
+    if (validateInputForm(e)) {
+      chargeVisible(true);
+    } else {
+      chargeVisible(false);
+    }
+  };
+
+  function addItem(e) {
+    if (e) {
+      e.preventDefault();
     }
 
-     const{code,name}= objCountry;
+    let countrieObj = {};
 
-     const addCountry = (e) => {
-        e.preventDefault();
-        
-        if(code.trim() === '' || name.trim() === ''){
-            saveError(true);
-            return;
-        }
-        saveLoading(true);
-        saveCountries([...countries,objCountry]);
+    if (countrieId === 0) {
+      countrieObj = {
+        name: countrie,
+      };
+      addCountrie(countrieObj);
+    } else {
+      countrieObj = {
+        name: countrie,
+        id: uCountrie[0].id,
+      };
+      updateCountries(countrieObj);
+      updateC(false);
     }
 
-     const deleteCountry = (paisId) =>{
-         saveLoading(true); 
-        const result = FilterData('countries',paisId);
-        saveCountries(result);
-     }
+    chargeCountrie('');
+    e.target.reset();
+    chargeVisible(true);
+  }
 
-    return (  
-        <Fragment>
-                <h3 className="text-center text-underline mt-5 mb-5">Agregar Pais y su Id</h3>
+  return (
+    <>
+    <h3 className="text-center text-underline mt-5 mb-5">Agregar Pais</h3>
                 <div className="container-fluid">
                     <div className="row ml-0 ml-lg-5">
                         <div className="col-12 col-md-5  col-lg-6">
-                            <form
-                                onSubmit={addCountry}
-                            >
-                                <div className="row">
-                                    <div className="col-12">
-                                        <label htmlFor="ID" >Id del pais</label>
-                                        <input 
-                                            type="text" 
-                                            id="code" 
-                                            name="code"
-                                            className="form-control" 
-                                            placeholder="Ingrese Id del pais"
-                                            onChange={updateState}
-                                            value={code}
-                                        />
-                                    </div>
-                                    <div className="col">
+                          <form onSubmit={addItem}>
+                          <div className="col">
                                         <label htmlFor="nombre" className="mt-4" >Nombre del pais</label>
-                                        <input 
-                                            type="text" 
-                                            id="name" 
-                                            name="name"
-                                            className="form-control" 
-                                            placeholder="Ingrese el nombre del pais"
-                                            onChange={updateState}
-                                            value={name}
-                                        />
-                                    </div>
-                                </div>
-                                <button 
-                                    type="submit" 
-                                    className="btn btn-success btn-lg mt-4"
-                                >
-                                    Agregar
-                                </button>
-                                {(error) 
-                                    ? <Alert tipo="danger" mensaje="Rellene todos los campos" time={3}/>: null
-                               }
-                               
-                            </form>
-                        </div>
-                        <div className="col-12 mt-5 col-md-7 mt-md-0 col-lg-6 ">
-                            {(loading) 
-                                ?  <Loader/>
-                                :  <div className="container">
-                                        <div className="row">
-                                            <div className="col-12">
-                                                <ViewPaises 
-                                                    countries ={countries}
-                                                    deleteCountry={deleteCountry}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-            </Fragment>
+                                            <input
+                                              type="text"
+                                              id="countrie"
+                                              className="form-control"
+                                              placeholder="Ingrese Pais"
+                                              onChange={e => addValue(e)}
+                                              onKeyDown={e => addValue(e)}
+                                              value={countrie}
+                                              required
+                                            />
+                                      <input type="text" value={countrieId} readOnly hidden />
+                                      </div>
+                                  <button disabled={visible} className="btn btn-success btn-lg mt-4" type="submit">
+                                    {nameBtn}
+                                  </button>
 
-    );
-}
- 
-export default Country;
-
+                                  {update ? (
+                                    <button
+                                      className="btn btn-danger btn-lg mt-4"
+                                      type="button"
+                                      onClick={() => updateC(false)}>
+                                      Cancelar
+                                    </button>
+          ) : (
+            ''
+          )}
+      </form>
+            </div>
+         </div>  
+     </div>
+    </>
+  );
+};
+export default PaisesForm;

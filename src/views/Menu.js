@@ -9,7 +9,7 @@ function Menu() {
     <div className="Menu">
       <h1>Menu</h1>
       <p>
-        Aplicacion para agregar puestos dependiendo del pais, ciudad y empresa.
+        Aplicación para agregar puestos dependiendo del pais, ciudad y empresa.
       </p>
 
       <nav onClick={closeMenu}>
